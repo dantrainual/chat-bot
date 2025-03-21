@@ -237,6 +237,11 @@
             .chat-widget-footer {
                 padding: 15px;
                 border-top: 1px solid #eee;
+                display: none; /* Hidden by default */
+            }
+            
+            .chat-widget-footer.active {
+                display: block; /* Show when active */
             }
             
             .chat-input-container {
@@ -401,7 +406,7 @@
         const body = createElement('div', 'chat-widget-body');
         chatWidget.appendChild(body);
         
-        // Footer
+        // Footer (input area) - it's hidden by default with CSS
         const footer = createElement('div', 'chat-widget-footer');
         
         const inputContainer = createElement('div', 'chat-input-container');
@@ -497,6 +502,9 @@
         form.appendChild(registerBtn);
         
         chatBody.appendChild(form);
+        
+        // Ensure the footer (input area) is hidden during registration
+        document.querySelector('.chat-widget-footer').classList.remove('active');
     }
 
     // Handle registration
@@ -527,9 +535,31 @@
                     conversationId: state.conversationId,
                     route: config.webhook.route || 'general'
                 }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Show the chat interface and any welcome response
+                initChatInterface();
+                
+                // Display a welcome message from the webhook if provided
+                if (data && data.message) {
+                    addMessage(data.message, 'bot');
+                }
+                
+                // Show the input area now that registration is complete
+                document.querySelector('.chat-widget-footer').classList.add('active');
+            })
+            .catch(error => {
+                console.error('Registration error:', error);
+                // Still show the chat interface even if webhook fails
+                initChatInterface();
+                
+                // Show the input area
+                document.querySelector('.chat-widget-footer').classList.add('active');
+                
+                // Add error message
+                addMessage('Registration successful. Welcome to the chat!', 'bot');
             });
-            
-            initChatInterface();
         }
     }
 
@@ -566,6 +596,11 @@
             
             chatBody.appendChild(suggestedQuestionsContainer);
         }
+        
+        // Show the input area if user is registered
+        if (state.isRegistered) {
+            document.querySelector('.chat-widget-footer').classList.add('active');
+        }
     }
 
     // Toggle chat open/closed
@@ -582,6 +617,11 @@
             } else if (!state.isRegistered) {
                 state.isRegistered = true; // Auto-register if not required
                 initChatInterface();
+                // Show the input area since registration is not required
+                document.querySelector('.chat-widget-footer').classList.add('active');
+            } else {
+                // User is already registered, so show the input area
+                document.querySelector('.chat-widget-footer').classList.add('active');
             }
         } else {
             chatWidget.classList.remove('active');
